@@ -7,6 +7,7 @@ A modern movie catalog application built with Next.js for the frontend and a RES
 - [Frontend Setup](#frontend-setup)
 - [Environment Variables](#environment-variables)
 - [Authentication Flow](#authentication-flow)
+- [Deployment](#deployment)
 
 ## Frontend Setup
 
@@ -100,3 +101,9 @@ The application uses JWT token-based authentication with the following flow:
 4. **Logout**:
    - When the user logs out, both tokens are invalidated on the server.
    - The cookies are cleared, and the store is reset.
+
+## Deployment
+
+The application is deployed and available at:
+
+[https://moviehub-frontend-mu.vercel.app/](https://moviehub-frontend-mu.vercel.app/)
