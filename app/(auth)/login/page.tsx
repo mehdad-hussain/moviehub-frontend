@@ -53,12 +53,10 @@ export default function LoginPage() {
         email: values.email,
         password: values.password,
       });
-
       const { user, accessToken } = result;
       setUser(user);
       setAccessToken(accessToken);
       toast.success("Login successful!");
-
       router.push(callbackUrl);
     } catch (error) {
       const message =

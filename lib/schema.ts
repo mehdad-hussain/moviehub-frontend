@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// Authentication schemas
 export const loginSchema = z.object({
   email: z
     .string({ required_error: "Email is required" })
@@ -30,3 +31,57 @@ export const registerSchema = z.object({
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+
+// User type definition
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+// API Response types
+export type LoginResponse = {
+  user: User;
+  accessToken: string;
+};
+
+export type RegisterResponse = {
+  user: User;
+  accessToken: string;
+};
+
+// API fetch options type
+export type FetchOptions = {
+  method?: string;
+  headers?: Record<string, string> | Headers;
+  body?: string | FormData | null;
+  mode?: "cors" | "no-cors" | "same-origin";
+  credentials?: "include" | "omit" | "same-origin";
+  cache?: "default" | "no-cache" | "reload" | "force-cache" | "only-if-cached";
+  redirect?: "follow" | "error" | "manual";
+  referrer?: string;
+  integrity?: string;
+  keepalive?: boolean;
+  signal?: AbortSignal | null;
+};
+
+// Movie types
+export type Rating = {
+  user: string;
+  value: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Movie = {
+  id: string;
+  title: string;
+  description: string;
+  releaseDate: string;
+  genre: string[];
+  imageUrl: string;
+  ratings: Rating[];
+  averageRating: number;
+  createdAt: string;
+  updatedAt: string;
+};

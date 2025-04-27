@@ -1,33 +1,8 @@
 import { environment } from "@/lib/env";
-import { User, useAuthStore } from "@/lib/store/auth-store";
+import { FetchOptions, LoginResponse, Movie, RegisterResponse } from "@/lib/schema";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 const API_BASE_URL = environment.NEXT_PUBLIC_API_URL;
-
-// Response types for API
-type LoginResponse = {
-  user: User;
-  accessToken: string;
-};
-
-type RegisterResponse = {
-  user: User;
-  accessToken: string;
-};
-
-// Define a type for fetch options that's more specific than 'any'
-type FetchOptions = {
-  method?: string;
-  headers?: Record<string, string> | Headers;
-  body?: string | FormData | null;
-  mode?: "cors" | "no-cors" | "same-origin";
-  credentials?: "include" | "omit" | "same-origin";
-  cache?: "default" | "no-cache" | "reload" | "force-cache" | "only-if-cached";
-  redirect?: "follow" | "error" | "manual";
-  referrer?: string;
-  integrity?: string;
-  keepalive?: boolean;
-  signal?: AbortSignal | null;
-};
 
 // Custom fetch function with authentication token handling
 export async function fetchWithAuth(endpoint: string, options: FetchOptions = {}) {
@@ -43,14 +18,13 @@ export async function fetchWithAuth(endpoint: string, options: FetchOptions = {}
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  // Always include credentials to send cookies with requests
   const fetchOptions = {
     ...options,
     headers,
+    // eslint-disable-next-line no-undef
     credentials: "include" as RequestCredentials,
   };
 
-  // Make the request
   let response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
 
   // Check for unauthorized status (token expired or invalid)
@@ -171,4 +145,54 @@ export const apiClient = {
 
   delete: (endpoint: string, options: FetchOptions = {}) =>
     fetchWithAuth(endpoint, { ...options, method: "DELETE" }),
+};
+
+// API functions for movies
+export const moviesApi = {
+  async getMovies(): Promise<Movie[]> {
+    const response = await fetchWithAuth("/movies");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch movies");
+    }
+
+    return response.json();
+  },
+
+  async getMovieById(id: string): Promise<Movie> {
+    const response = await fetchWithAuth(`/movies/${id}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch movie details");
+    }
+
+    return response.json();
+  },
+
+  async rateMovie(movieId: string, rating: number): Promise<Movie> {
+    const response = await fetchWithAuth(`/movies/${movieId}/rate`, {
+      method: "POST",
+      body: JSON.stringify({ value: rating }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to submit rating");
+    }
+
+    return response.json();
+  },
+
+  async createMovie(movieData: Partial<Movie>): Promise<Movie> {
+    const response = await fetchWithAuth("/movies", {
+      method: "POST",
+      body: JSON.stringify(movieData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to create movie");
+    }
+
+    return response.json();
+  },
 };

@@ -1,11 +1,5 @@
+import { User } from "@/lib/schema";
 import { create } from "zustand";
-
-// User type definition
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-};
 
 type AuthState = {
   user: User | null;

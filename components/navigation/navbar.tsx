@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { authApi } from "@/lib/api";
-import { useAuthStore, User } from "@/lib/store/auth-store";
+import { User } from "@/lib/schema";
+import { useAuthStore } from "@/lib/store/auth-store";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,9 +29,9 @@ export function NavBar({
     setAccessToken,
     setUser,
   } = useAuthStore();
-
   const isAuthenticated = isClient ? !!clientAccessToken : serverIsAuthenticated;
   const user = isClient ? clientUser : serverUser;
+  const accessToken = isClient ? clientAccessToken : serverAccessToken;
 
   useEffect(() => {
     // Mark that we're on the client side
@@ -38,10 +39,18 @@ export function NavBar({
 
     // Keep server and client states in sync
     if (serverIsAuthenticated && serverAccessToken) {
-      setAccessToken(serverAccessToken);
-      setUser(serverUser);
+      setAccessToken(accessToken);
+      setUser(user);
     }
-  }, [serverAccessToken, serverUser, setAccessToken, setUser, serverIsAuthenticated]);
+  }, [
+    serverAccessToken,
+    serverUser,
+    setAccessToken,
+    setUser,
+    serverIsAuthenticated,
+    accessToken,
+    user,
+  ]);
 
   // Check if the current route is an auth route
   const isAuthRoute = pathname === "/login" || pathname === "/register";
@@ -61,6 +70,11 @@ export function NavBar({
       setUser(null);
       router.refresh();
     }
+  };
+
+  const handleLogin = () => {
+    const callbackUrl = encodeURI(pathname);
+    router.push(`/login?callbackUrl=${callbackUrl}`);
   };
 
   return (
@@ -108,8 +122,8 @@ export function NavBar({
               </div>
             ) : (
               <div className="flex space-x-2">
-                <Button variant="outline" className="cursor-pointer" asChild>
-                  <Link href="/login">Login</Link>
+                <Button variant="outline" className="cursor-pointer" onClick={handleLogin}>
+                  Login
                 </Button>
                 <Button asChild>
                   <Link href="/register" className="cursor-pointer">
