@@ -1,6 +1,5 @@
 import { NavBar } from "@/components/navigation/navbar";
 import SocketProvider from "@/components/providers/socket-provider";
-import { validateAuthentication } from "@/lib/utils/auth-utils";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
@@ -21,18 +20,16 @@ export const metadata: Metadata = {
   description: "Browse and manage your movie collection",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { isAuthenticated, user, accessToken } = await validateAuthentication();
-
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SocketProvider>
-          <NavBar isAuthenticated={isAuthenticated} user={user} accessToken={accessToken} />
+          <NavBar />
           <main>{children}</main>
           <Toaster position="top-right" richColors />
         </SocketProvider>

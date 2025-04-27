@@ -20,12 +20,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { moviesApi } from "@/lib/api";
 import { CreateMovieFormValues, CreateMovieRequest, createMovieSchema } from "@/lib/schema";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FilmIcon, Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -33,6 +36,43 @@ type Props = Record<string, never>;
 
 const Page = ({}: Props) => {
   const router = useRouter();
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  const { accessToken, user } = useAuthStore();
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      setIsAuthChecking(true);
+
+      // If no access token in store, try to refresh
+      if (!accessToken) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-token`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            // If refresh fails, redirect to login
+            router.push("/login?callbackUrl=" + encodeURIComponent("/dashboard"));
+            return;
+          }
+        } catch (error) {
+          console.error("Error checking authentication:", error);
+          router.push("/login?callbackUrl=" + encodeURIComponent("/dashboard"));
+          return;
+        }
+      }
+
+      setIsAuthChecking(false);
+    };
+
+    checkAuth();
+  }, [accessToken, router]);
 
   const form = useForm<CreateMovieFormValues>({
     resolver: zodResolver(createMovieSchema),
@@ -64,6 +104,46 @@ const Page = ({}: Props) => {
       toast.error(errorMessage);
     }
   };
+
+  if (isAuthChecking) {
+    return (
+      <div className="container mx-auto py-10 px-4 max-w-6xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader className="border-b bg-card pb-6">
+            <Skeleton className="h-7 w-40 mb-2" />
+            <Skeleton className="h-4 w-72" />
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-24 w-full" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-40 w-full" />
+              <Separator />
+              <div className="flex justify-end gap-2">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-28" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-10 px-4 max-w-6xl">
