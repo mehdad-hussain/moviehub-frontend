@@ -13,8 +13,12 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      "no-console": ["warn"],
-      "no-unused-vars": ["warn"],
+      "no-console": ["warn", { allow: ["error"] }],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
       "no-undef": ["warn"],
       "no-duplicate-imports": ["error"],
       "no-var": ["error"],

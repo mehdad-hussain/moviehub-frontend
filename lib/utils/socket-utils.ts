@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { environment } from "@/lib/env";
 import { Movie } from "@/lib/schema";
 import { io, Socket } from "socket.io-client";

@@ -3,7 +3,7 @@
 import { LoginFormValues, loginSchema } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,12 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-export default function LoginPage() {
-  const [isPending, setIsPending] = useState(false);
-  const router = useRouter();
+function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
+  const [isPending, setIsPending] = useState(false);
+  const router = useRouter();
 
   const { setUser, setAccessToken } = useAuthStore();
 
@@ -144,5 +145,13 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

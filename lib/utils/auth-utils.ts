@@ -1,6 +1,8 @@
+import { unstable_noStore } from "next/cache";
 import { cookies } from "next/headers";
 
 export async function validateAuthentication() {
+  unstable_noStore();
   try {
     const cookieStore = await cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
