@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MovieHub Application
 
-## Getting Started
+A modern movie catalog application built with Next.js for the frontend and a REST API backend.
 
-First, run the development server:
+## Table of Contents
+
+- [Frontend Setup](#frontend-setup)
+- [Environment Variables](#environment-variables)
+- [Authentication Flow](#authentication-flow)
+
+## Frontend Setup
+
+The frontend is built with Next.js and uses Tailwind CSS with ShadcnUI components for styling.
+
+### Prerequisites
+
+- Node.js 18.x or higher
+- npm or yarn or bun package manager
+
+### Installation and Setup
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/mehdad-hussain/moviehub-frontend.git
+cd moviehub-frontend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+# or
+bun install
+```
+
+3. Create a `.env` file in the root directory with the required environment variables (see [Environment Variables](#environment-variables) section).
+
+4. Start the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
 # or
-pnpm dev
-# or
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Building for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+# or
+yarn build
+yarn start
+# or
+bun run build
+bun run start
+```
 
-## Learn More
+### Frontend Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env` file in the root of the frontend project with the following variables:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+# API URL (required)
+NEXT_PUBLIC_API_URL=http://localhost:4000
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+# Node environment
+NODE_ENV=development
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Authentication Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The application uses JWT token-based authentication with the following flow:
+
+1. **User Login/Registration**:
+
+   - When a user logs in or registers, the backend responds with an access token and a refresh token.
+   - The access token is stored in memory (through Zustand store).
+   - The refresh token is stored as an HTTP-only cookie.
+
+2. **Token Usage**:
+
+   - The access token is sent in the `Authorization` header with each API request.
+   - When the access token expires, the frontend automatically attempts to refresh it.
+
+3. **Token Refresh**:
+
+   - When an API request returns a 401 Unauthorized status, the frontend tries to refresh the token.
+   - A request is sent to `/auth/refresh-token` with the refresh token cookie.
+   - If successful, a new access token is received and stored.
+
+4. **Logout**:
+   - When the user logs out, both tokens are invalidated on the server.
+   - The cookies are cleared, and the store is reset.
