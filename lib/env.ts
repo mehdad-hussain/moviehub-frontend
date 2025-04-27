@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { z } from "zod";
 
 // Server-side only env schema

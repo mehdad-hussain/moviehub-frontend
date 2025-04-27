@@ -32,6 +32,21 @@ export const registerSchema = z.object({
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 
+// Movie schemas
+export const createMovieSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  releaseDate: z.string().min(1, "Release date is required"),
+  genre: z.string().min(1, "Genre is required"),
+  imageUrl: z.string().url("Please provide a valid URL"),
+});
+
+export type CreateMovieFormValues = z.infer<typeof createMovieSchema>;
+
+export type CreateMovieRequest = Omit<CreateMovieFormValues, "genre"> & {
+  genre: string[];
+};
+
 // User type definition
 export type User = {
   id: string;

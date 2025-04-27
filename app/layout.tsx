@@ -1,4 +1,5 @@
 import { NavBar } from "@/components/navigation/navbar";
+import SocketProvider from "@/components/providers/socket-provider";
 import { validateAuthentication } from "@/lib/utils/auth-utils";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -25,15 +26,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Validate authentication on server side
   const { isAuthenticated, user, accessToken } = await validateAuthentication();
 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <NavBar isAuthenticated={isAuthenticated} user={user} accessToken={accessToken} />
-        <main>{children}</main>
-        <Toaster position="top-right" richColors />
+        <SocketProvider>
+          <NavBar isAuthenticated={isAuthenticated} user={user} accessToken={accessToken} />
+          <main>{children}</main>
+          <Toaster position="top-right" richColors />
+        </SocketProvider>
       </body>
     </html>
   );

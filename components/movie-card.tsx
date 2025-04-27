@@ -17,7 +17,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
 
   return (
     <Card
-      className="h-2/3 overflow-hidden transition-all duration-300 hover:scale-102 hover:shadow-xl cursor-pointer rounded-lg border-none"
+      className="h-full overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer rounded-lg border-none flex flex-col"
       onClick={() => router.push(`/movies/${movie.id}`)}
     >
       <div className="relative aspect-[2/3] w-full overflow-hidden group">
@@ -35,7 +35,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
         </div>
       </div>
 
-      <CardContent className="p-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <CardContent className="p-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 flex-grow flex flex-col">
         <h3 className="font-bold text-lg line-clamp-1 text-gray-900 dark:text-gray-100">
           {movie.title}
         </h3>
