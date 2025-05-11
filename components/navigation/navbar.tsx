@@ -95,7 +95,6 @@ export function NavBar() {
               >
                 Home
               </Link>
-
               {!isLoading && accessToken && (
                 <Link
                   href="/dashboard"
@@ -106,6 +105,18 @@ export function NavBar() {
                   }`}
                 >
                   Dashboard
+                </Link>
+              )}
+              {!isLoading && accessToken && (
+                <Link
+                  href="/chat"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    pathname.startsWith("/chat")
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300"
+                  }`}
+                >
+                  Chat
                 </Link>
               )}
               {isLoading && (
