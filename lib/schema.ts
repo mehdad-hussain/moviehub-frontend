@@ -50,6 +50,7 @@ export type CreateMovieRequest = Omit<CreateMovieFormValues, "genre"> & {
 // User type definition
 export type User = {
   id: string;
+  _id?: string;
   name: string;
   email: string;
 };
@@ -97,6 +98,22 @@ export type Movie = {
   imageUrl: string;
   ratings: Rating[];
   averageRating: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Chat message type
+export type ChatMessage = {
+  _id: string;
+  sender: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  recipient: string;
+  message: string;
+  messageType: string;
+  read: boolean;
   createdAt: string;
   updatedAt: string;
 };

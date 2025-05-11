@@ -1,5 +1,5 @@
 import { environment } from "@/lib/env";
-import { FetchOptions, LoginResponse, Movie, RegisterResponse } from "@/lib/schema";
+import { FetchOptions, LoginResponse, Movie, RegisterResponse, User } from "@/lib/schema";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 const API_BASE_URL = environment.NEXT_PUBLIC_API_URL;
@@ -194,5 +194,48 @@ export const moviesApi = {
     }
 
     return response.json();
+  },
+};
+
+// API functions for users
+export const usersApi = {
+  async getAllUsers(): Promise<User[]> {
+    const response = await fetchWithAuth("/auth/users");
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to fetch users");
+    }
+
+    return await response.json();
+  },
+};
+
+// API functions for chat
+export const chatApi = {
+  async getChatHistory(userId: string) {
+    if (!userId) {
+      throw new Error("User ID is required to fetch chat history");
+    }
+
+    const response = await fetchWithAuth(`/chat/history/${userId}`);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to fetch chat history");
+    }
+
+    return await response.json();
+  },
+
+  async getChatUsers() {
+    const response = await fetchWithAuth("/chat/users");
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to fetch chat users");
+    }
+
+    return await response.json();
   },
 };
