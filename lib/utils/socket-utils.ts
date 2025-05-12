@@ -55,6 +55,9 @@ export const CHAT_EVENTS = {
   USER_JOINED_ROOM: "user-joined-room",
   USER_LEFT_ROOM: "user-left-room",
   ROOM_MEMBER_LEFT: "room-member-left",
+  // Reconnection events
+  RECONNECT: "reconnect",
+  RECONNECTION_SUCCESSFUL: "reconnection-successful",
 };
 
 export const initializeSocket = (
@@ -124,6 +127,23 @@ export const initializeSocket = (
         chatSocket.on("connect_error", (error) => {
           console.error("Chat socket connection error:", error);
         });
+
+        // Listen for reconnection events
+        chatSocket.on("reconnect", (attemptNumber) => {
+          console.log(`Chat socket reconnected after ${attemptNumber} attempts`);
+        });
+
+        chatSocket.on("reconnect_attempt", (attemptNumber) => {
+          console.log(`Chat socket reconnection attempt #${attemptNumber}`);
+        });
+
+        chatSocket.on("reconnection-successful", (data) => {
+          console.log(`Reconnection successful: ${data.message}`);
+        });
+      } else {
+        // In production, still listen for reconnection events but don't log
+        chatSocket.on("reconnect", () => {});
+        chatSocket.on("reconnection-successful", () => {});
       }
     }
   } else if (chatSocket) {
@@ -323,5 +343,31 @@ export const offRoomAdded = (
 ): void => {
   if (chatSocket) {
     chatSocket.off(CHAT_EVENTS.ROOM_ADDED, callback);
+  }
+};
+
+export const onReconnect = (callback: () => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.RECONNECT, callback);
+  }
+};
+
+export const offReconnect = (callback: () => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.RECONNECT, callback);
+  }
+};
+
+export const onReconnectionSuccessful = (callback: (data: { message: string }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.RECONNECTION_SUCCESSFUL, callback);
+  }
+};
+
+export const offReconnectionSuccessful = (callback: (data: { message: string }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.RECONNECTION_SUCCESSFUL, callback);
   }
 };

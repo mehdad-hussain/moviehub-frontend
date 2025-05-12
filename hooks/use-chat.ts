@@ -7,12 +7,16 @@ import {
   offMessageSent,
   offNewMessage,
   offNewRoomMessage,
+  offReconnect,
+  offReconnectionSuccessful,
   offRoomAdded,
   offRoomJoined,
   offRoomLeft,
   onMessageSent,
   onNewMessage,
   onNewRoomMessage,
+  onReconnect,
+  onReconnectionSuccessful,
   onRoomAdded,
   onRoomJoined,
   onRoomLeft,
@@ -20,7 +24,7 @@ import {
   sendPrivateMessage,
   sendRoomMessage,
 } from "@/lib/utils/socket-utils";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
 
 type UseChatProps = {
@@ -30,6 +34,8 @@ type UseChatProps = {
   onRoomJoined?: (data: { roomId: string; name: string }) => void;
   onRoomLeft?: (data: { roomId: string; name: string }) => void;
   onRoomAdded?: (data: { room: RoomInfo; message: string }) => void;
+  onReconnect?: () => void;
+  onReconnectionSuccessful?: (data: { message: string }) => void;
 };
 
 export function useChat({
@@ -39,9 +45,12 @@ export function useChat({
   onRoomJoined: roomJoinedCallback,
   onRoomLeft: roomLeftCallback,
   onRoomAdded: roomAddedCallback,
+  onReconnect: reconnectCallback,
+  onReconnectionSuccessful: reconnectionSuccessfulCallback,
 }: UseChatProps = {}) {
   const socketRef = useRef<Socket | null>(null);
   const { accessToken } = useAuthStore();
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
   useEffect(() => {
     // Only attempt to get a socket if we have an access token
@@ -76,6 +85,47 @@ export function useChat({
       if (roomAddedCallback) {
         onRoomAdded(roomAddedCallback);
       }
+
+      // Setup reconnection event handlers
+      if (reconnectCallback) {
+        onReconnect(reconnectCallback);
+      }
+
+      if (reconnectionSuccessfulCallback) {
+        onReconnectionSuccessful(reconnectionSuccessfulCallback);
+      }
+
+      // Default reconnect handlers (if no custom handlers provided)
+      if (!reconnectCallback) {
+        onReconnect(() => {
+          // eslint-disable-next-line no-console
+          console.log("Socket reconnected to server");
+          setIsReconnecting(false);
+        });
+
+        // Also directly listen to the socket.io reconnect event
+        socketRef.current.on("reconnect", (attemptNumber) => {
+          // eslint-disable-next-line no-console
+          console.log(`Reconnected to server after ${attemptNumber} attempts`);
+          setIsReconnecting(false);
+        });
+      }
+
+      if (!reconnectionSuccessfulCallback) {
+        onReconnectionSuccessful((data) => {
+          // eslint-disable-next-line no-console
+          console.log(data.message);
+          setIsReconnecting(false);
+
+          // You can resume chat activity here
+          // For example, re-fetch active conversations or room data
+        });
+      }
+
+      // Handle disconnect by setting reconnecting state
+      socketRef.current.on("disconnect", () => {
+        setIsReconnecting(true);
+      });
     }
 
     // Cleanup function
@@ -103,6 +153,20 @@ export function useChat({
       if (roomAddedCallback) {
         offRoomAdded(roomAddedCallback);
       }
+
+      // Clean up reconnection handlers
+      if (reconnectCallback) {
+        offReconnect(reconnectCallback);
+      }
+
+      if (reconnectionSuccessfulCallback) {
+        offReconnectionSuccessful(reconnectionSuccessfulCallback);
+      }
+
+      if (socketRef.current) {
+        socketRef.current.off("disconnect");
+        socketRef.current.off("reconnect");
+      }
     };
   }, [
     newMessageCallback,
@@ -111,6 +175,8 @@ export function useChat({
     roomJoinedCallback,
     roomLeftCallback,
     roomAddedCallback,
+    reconnectCallback,
+    reconnectionSuccessfulCallback,
     accessToken,
   ]);
 
@@ -160,6 +226,7 @@ export function useChat({
   return {
     socket: socketRef.current,
     isConnected: !!socketRef.current?.connected,
+    isReconnecting,
     sendMessage,
     joinRoom,
     leaveRoom,

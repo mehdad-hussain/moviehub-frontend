@@ -63,7 +63,7 @@ const Page = () => {
     checkAuth();
   }, [accessToken, router]);
 
-  const { sendMessage, joinRoom, leaveRoom } = useChat({
+  const { sendMessage, joinRoom, leaveRoom, isReconnecting } = useChat({
     onNewMessage: (message) => {
       if (selectedUser && message.sender._id === selectedUser.id) {
         addMessage({ ...message, read: message.read || false });
@@ -100,6 +100,17 @@ const Page = () => {
       }
 
       fetchRooms();
+    },
+    // Add reconnection handlers
+    onReconnect: () => {
+      toast.success("Reconnected", {
+        description: "Your connection has been restored.",
+      });
+    },
+    onReconnectionSuccessful: (data) => {
+      toast.success("Reconnection successful", {
+        description: data.message,
+      });
     },
   });
 
