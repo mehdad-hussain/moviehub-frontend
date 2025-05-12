@@ -110,10 +110,21 @@ export type ChatMessage = {
     name: string;
     email: string;
   };
-  recipient: string;
+  recipient?: string;
+  roomId?: string;
   message: string;
   messageType: string;
   read: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+// ChatRoom type definition
+export type ChatRoom = {
+  _id: string;
+  name: string;
+  description?: string;
+  isPrivate: boolean;
+  creator: string | User;
+  members: User[];
 };

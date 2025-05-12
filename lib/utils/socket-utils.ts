@@ -18,11 +18,20 @@ export type ChatMessage = {
     email: string;
   };
   recipient: string;
+  roomId?: string;
   message: string;
   messageType: string;
   createdAt: string;
   updatedAt: string;
   read?: boolean;
+};
+
+export type RoomInfo = {
+  _id: string;
+  name: string;
+  description?: string;
+  isPrivate: boolean;
+  creator: string;
 };
 
 // Main socket connection (no auth required)
@@ -35,6 +44,17 @@ export const CHAT_EVENTS = {
   PRIVATE_MESSAGE: "private-message",
   NEW_MESSAGE: "new-message",
   MESSAGE_SENT: "message-sent",
+  // Room-related events
+  ROOM_MESSAGE: "room-message",
+  NEW_ROOM_MESSAGE: "new-room-message",
+  JOIN_ROOM: "join-room",
+  LEAVE_ROOM: "leave-room",
+  ROOM_JOINED: "room-joined",
+  ROOM_LEFT: "room-left",
+  ROOM_ADDED: "room-added",
+  USER_JOINED_ROOM: "user-joined-room",
+  USER_LEFT_ROOM: "user-left-room",
+  ROOM_MEMBER_LEFT: "room-member-left",
 };
 
 export const initializeSocket = (
@@ -202,5 +222,106 @@ export const onMessageSent = (callback: (message: ChatMessage) => void): void =>
 export const offMessageSent = (callback: (message: ChatMessage) => void): void => {
   if (chatSocket) {
     chatSocket.off(CHAT_EVENTS.MESSAGE_SENT, callback);
+  }
+};
+
+// Room chat related functions
+export const sendRoomMessage = (roomId: string, message: string): void => {
+  if (!roomId) {
+    console.error("Cannot send message: Room ID is undefined");
+    return;
+  }
+
+  console.log("Sending message to room ID:", roomId);
+
+  const { chat } = getSocket();
+  if (chat) {
+    chat.emit(CHAT_EVENTS.ROOM_MESSAGE, { roomId, message });
+  } else {
+    console.error("Chat socket not initialized");
+  }
+};
+
+export const onNewRoomMessage = (callback: (message: ChatMessage) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.NEW_ROOM_MESSAGE, callback);
+  }
+};
+
+export const offNewRoomMessage = (callback: (message: ChatMessage) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.NEW_ROOM_MESSAGE, callback);
+  }
+};
+
+export const joinRoom = (roomId: string): void => {
+  if (!roomId) {
+    console.error("Cannot join room: Room ID is undefined");
+    return;
+  }
+
+  const { chat } = getSocket();
+  if (chat) {
+    chat.emit(CHAT_EVENTS.JOIN_ROOM, roomId);
+  } else {
+    console.error("Chat socket not initialized");
+  }
+};
+
+export const onRoomJoined = (callback: (data: { roomId: string; name: string }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.ROOM_JOINED, callback);
+  }
+};
+
+export const offRoomJoined = (callback: (data: { roomId: string; name: string }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.ROOM_JOINED, callback);
+  }
+};
+
+export const leaveRoom = (roomId: string): void => {
+  if (!roomId) {
+    console.error("Cannot leave room: Room ID is undefined");
+    return;
+  }
+
+  const { chat } = getSocket();
+  if (chat) {
+    chat.emit(CHAT_EVENTS.LEAVE_ROOM, roomId);
+  } else {
+    console.error("Chat socket not initialized");
+  }
+};
+
+export const onRoomLeft = (callback: (data: { roomId: string; name: string }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.ROOM_LEFT, callback);
+  }
+};
+
+export const offRoomLeft = (callback: (data: { roomId: string; name: string }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.ROOM_LEFT, callback);
+  }
+};
+
+export const onRoomAdded = (
+  callback: (data: { room: RoomInfo; message: string }) => void,
+): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.ROOM_ADDED, callback);
+  }
+};
+
+export const offRoomAdded = (
+  callback: (data: { room: RoomInfo; message: string }) => void,
+): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.ROOM_ADDED, callback);
   }
 };

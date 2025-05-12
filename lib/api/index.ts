@@ -239,3 +239,67 @@ export const chatApi = {
     return await response.json();
   },
 };
+
+// API functions for room and group chat
+export const chatRoomApi = {
+  async createRoom(roomData: {
+    name: string;
+    description?: string;
+    isPrivate?: boolean;
+    members?: string[];
+  }) {
+    const response = await fetchWithAuth("/chat/rooms", {
+      method: "POST",
+      body: JSON.stringify(roomData),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create room");
+    }
+    return await response.json();
+  },
+
+  async getUserRooms() {
+    const response = await fetchWithAuth("/chat/rooms");
+    if (!response.ok) {
+      throw new Error("Failed to fetch user rooms");
+    }
+    return await response.json();
+  },
+
+  async getRoomById(roomId: string) {
+    const response = await fetchWithAuth(`/chat/rooms/${roomId}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch room details");
+    }
+    return await response.json();
+  },
+
+  async addRoomMembers(roomId: string, members: string[]) {
+    const response = await fetchWithAuth(`/chat/rooms/${roomId}/members`, {
+      method: "POST",
+      body: JSON.stringify({ members }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to add members to room");
+    }
+    return await response.json();
+  },
+
+  async leaveRoom(roomId: string) {
+    const response = await fetchWithAuth(`/chat/rooms/${roomId}/leave`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to leave room");
+    }
+    return await response.json();
+  },
+
+  async getRoomChatHistory(roomId: string) {
+    const response = await fetchWithAuth(`/chat/rooms/${roomId}/history`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch room chat history");
+    }
+    return await response.json();
+  },
+};
