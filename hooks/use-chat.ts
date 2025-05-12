@@ -40,22 +40,19 @@ export function useChat({
   onRoomLeft: roomLeftCallback,
   onRoomAdded: roomAddedCallback,
 }: UseChatProps = {}) {
-  const socketRef = useRef<{ main: Socket | null; chat: Socket | null }>({
-    main: null,
-    chat: null,
-  });
+  const socketRef = useRef<Socket | null>(null);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
     // Only attempt to get a socket if we have an access token
     if (accessToken) {
-      socketRef.current = getSocket(accessToken);
+      socketRef.current = getSocket(accessToken).chat;
     } else {
-      socketRef.current = { main: getSocket().main, chat: null };
+      socketRef.current = null;
     }
 
     // Only register event listeners if we have both a socket and callbacks
-    if (socketRef.current.chat) {
+    if (socketRef.current) {
       if (newMessageCallback) {
         onNewMessage(newMessageCallback);
       }
@@ -119,7 +116,7 @@ export function useChat({
 
   const sendMessage = useCallback(
     (targetId: string, message: string, isRoom: boolean = false) => {
-      if (!socketRef.current.chat) {
+      if (!socketRef.current) {
         console.error("Chat socket not initialized");
         return false;
       }
@@ -136,7 +133,7 @@ export function useChat({
 
   const joinRoom = useCallback(
     (roomId: string) => {
-      if (!socketRef.current.chat) {
+      if (!socketRef.current) {
         console.error("Chat socket not initialized");
         return false;
       }
@@ -149,7 +146,7 @@ export function useChat({
 
   const leaveRoom = useCallback(
     (roomId: string) => {
-      if (!socketRef.current.chat) {
+      if (!socketRef.current) {
         console.error("Chat socket not initialized");
         return false;
       }
@@ -161,8 +158,8 @@ export function useChat({
   );
 
   return {
-    socket: socketRef.current.chat,
-    isConnected: !!socketRef.current.chat?.connected,
+    socket: socketRef.current,
+    isConnected: !!socketRef.current?.connected,
     sendMessage,
     joinRoom,
     leaveRoom,

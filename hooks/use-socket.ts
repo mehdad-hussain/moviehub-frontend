@@ -20,25 +20,23 @@ export function useSocket({
   onMovieAdded: movieAddedCallback,
   onRatingUpdated: ratingUpdatedCallback,
 }: UseSocketProps = {}) {
-  const socketRef = useRef<{ main: Socket | null }>({
-    main: null,
-  });
+  const socketRef = useRef<Socket | null>(null);
   const { accessToken } = useAuthStore();
 
   useEffect(() => {
     // Only attempt to get a socket if we have an access token
     if (accessToken) {
-      socketRef.current = getSocket(accessToken);
+      socketRef.current = getSocket(accessToken).main;
     } else {
-      socketRef.current = { main: getSocket().main };
+      socketRef.current = getSocket().main;
     }
 
     // Only register event listeners if we have both a socket and callbacks
-    if (socketRef.current.main && movieAddedCallback) {
+    if (socketRef.current && movieAddedCallback) {
       onMovieAdded(movieAddedCallback);
     }
 
-    if (socketRef.current.main && ratingUpdatedCallback) {
+    if (socketRef.current && ratingUpdatedCallback) {
       onRatingUpdated(ratingUpdatedCallback);
     }
 

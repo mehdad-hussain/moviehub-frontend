@@ -38,7 +38,7 @@ const Page = ({}: Props) => {
   const router = useRouter();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  const { accessToken, user } = useAuthStore();
+  const { accessToken } = useAuthStore();
 
   useEffect(() => {
     // Check if user is authenticated
