@@ -238,6 +238,17 @@ export const chatApi = {
 
     return await response.json();
   },
+
+  async getOnlineUsers() {
+    const response = await fetchWithAuth("/chat/users/online");
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to fetch online users");
+    }
+
+    return await response.json();
+  },
 };
 
 // API functions for room and group chat

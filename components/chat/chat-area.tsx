@@ -16,6 +16,7 @@ type ChatAreaProps = {
   messages: ChatMessage[];
   sendMessage: (recipientIdOrRoomId: string, message: string, isRoomMessage?: boolean) => void;
   onLeaveRoom: (roomId: string) => void;
+  onlineUserIds?: string[]; // Add this prop
 };
 
 export const ChatArea = ({
@@ -25,6 +26,7 @@ export const ChatArea = ({
   messages,
   sendMessage,
   onLeaveRoom,
+  onlineUserIds = [], // Default to empty array
 }: ChatAreaProps) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,7 +91,8 @@ export const ChatArea = ({
                 {getInitials(selectedUser ? selectedUser.name : selectedRoom?.name || "")}
               </AvatarFallback>
             </Avatar>
-            {selectedUser && (
+            {/* Only show the green dot for online users */}
+            {selectedUser && onlineUserIds.includes(selectedUser.id) && (
               <span className="absolute bottom-0 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></span>
             )}
           </div>

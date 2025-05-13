@@ -10,6 +10,7 @@ type UsersListProps = {
   isLoading: boolean;
   error: string | null;
   onUserSelect: (user: User) => void;
+  onlineUserIds?: string[]; // Add this prop to track online users
 };
 
 export const UsersList = ({
@@ -19,6 +20,7 @@ export const UsersList = ({
   isLoading,
   error,
   onUserSelect,
+  onlineUserIds = [], // Default to empty array
 }: UsersListProps) => {
   if (isLoading) {
     return (
@@ -57,7 +59,10 @@ export const UsersList = ({
                     />
                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-2 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card"></span>
+                  {/* Only show the green dot for online users */}
+                  {onlineUserIds.includes(user.id) && (
+                    <span className="absolute bottom-0 right-2 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card"></span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{user.name}</div>

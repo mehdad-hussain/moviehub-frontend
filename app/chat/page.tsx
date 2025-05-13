@@ -31,10 +31,10 @@ const Page = () => {
   const [onlineUsers, setOnlineUsers] = useState<Record<string, User[]>>({});
   const [selectedRoomForUsers, setSelectedRoomForUsers] = useState<string | null>(null);
   const [showOnlineUsersDialog, setShowOnlineUsersDialog] = useState(false);
+  const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
 
   const { accessToken, user: currentUser } = useAuthStore((state) => state);
   const { messages, setMessages, addMessage } = useMessages();
-  // Add a state to track rooms created by the current user
   const [createdRoomIds, setCreatedRoomIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -67,6 +67,7 @@ const Page = () => {
 
     checkAuth();
   }, [accessToken, router]);
+
   const { sendMessage, joinRoom, leaveRoom, getOnlineUsers } = useChat({
     onNewMessage: (message) => {
       if (selectedUser && message.sender._id === selectedUser.id) {
@@ -88,7 +89,6 @@ const Page = () => {
     },
     onRoomJoined: (data) => {
       console.log(`Joined room: ${data.name}`);
-      // When joining a room, request the online users for this room
       getOnlineUsers();
     },
     onRoomLeft: (data) => {
@@ -97,9 +97,7 @@ const Page = () => {
     onRoomAdded: (data) => {
       console.log(`Added to room: ${data.room.name}`);
 
-      // Check if this is a room the current user created
       if (!createdRoomIds.has(data.room._id)) {
-        // Only show toast for rooms the user didn't create themselves
         toast.success(data.message, {
           description: `You have been added to ${data.room.name}`,
         });
@@ -107,29 +105,44 @@ const Page = () => {
 
       fetchRooms();
     },
-    // Online user events
     onOnlineUsersList: (data) => {
-      const roomUsersMap: Record<string, User[]> = {};
-
-      // Process the users and organize them by room
       if (data.userIds && data.userIds.length > 0) {
-        // Find the actual user objects from allUsers
+        setOnlineUserIds(data.userIds);
+      }
+
+      const roomUsersMap: Record<string, User[]> = {};
+      if (data.userIds && data.userIds.length > 0) {
         const onlineUserObjects = allUsers.filter((user) => data.userIds.includes(user.id));
 
-        // For simplicity, we'll just add all online users to the current selected room
         if (selectedRoom) {
           roomUsersMap[selectedRoom._id] = onlineUserObjects;
         }
       }
-
       setOnlineUsers(roomUsersMap);
     },
-    // Reconnection handlers
+    onUserOnline: (data) => {
+      setOnlineUserIds((prev) => (prev.includes(data.userId) ? prev : [...prev, data.userId]));
+
+      if (currentUser && data.userId !== currentUser.id) {
+        toast.info(`${data.user.name} is now online`, {
+          duration: 3000,
+        });
+      }
+    },
+    onUserOffline: (data) => {
+      setOnlineUserIds((prev) => prev.filter((id) => id !== data.userId));
+
+      const offlineUser = allUsers.find((user) => user.id === data.userId);
+      if (offlineUser && currentUser && data.userId !== currentUser.id) {
+        toast.info(`${offlineUser.name} went offline`, {
+          duration: 3000,
+        });
+      }
+    },
     onReconnect: () => {
       toast.success("Reconnected", {
         description: "Your connection has been restored.",
       });
-      // After reconnection, refresh the online users list
       getOnlineUsers();
     },
     onReconnectionSuccessful: (data) => {
@@ -148,7 +161,6 @@ const Page = () => {
     const fetchInitialData = async () => {
       try {
         await Promise.all([fetchChatUsers(), fetchAllUsers(), fetchRooms()]);
-        // After fetching initial data, request online users
         getOnlineUsers();
       } catch (err) {
         console.error("Error fetching initial data:", err);
@@ -186,6 +198,18 @@ const Page = () => {
       setUsers(allUsers);
     }
   }, [searchQuery, allUsers]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    getOnlineUsers();
+
+    const interval = setInterval(() => {
+      getOnlineUsers();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [accessToken, getOnlineUsers]);
 
   const fetchChatUsers = async () => {
     try {
@@ -227,7 +251,6 @@ const Page = () => {
       const userRooms = await chatRoomApi.getUserRooms();
       setRooms(userRooms);
 
-      // After fetching rooms, also request online users
       if (getOnlineUsers) {
         getOnlineUsers();
       }
@@ -273,7 +296,6 @@ const Page = () => {
     setSelectedUser(null);
     joinRoom(room._id);
     loadRoomChatHistory(room._id);
-    // When a room is selected, fetch online users
     getOnlineUsers();
   };
 
@@ -314,7 +336,6 @@ const Page = () => {
     try {
       const newRoom = await chatRoomApi.createRoom(roomData);
 
-      // Store the ID of the room the user just created
       if (newRoom && newRoom._id) {
         setCreatedRoomIds((prev) => {
           const updated = new Set(prev);
@@ -387,6 +408,7 @@ const Page = () => {
           onTabChange={handleSetTab}
           onCreateRoom={handleCreateRoom}
           onlineUsers={onlineUsers}
+          onlineUserIds={onlineUserIds}
           onShowOnlineUsers={handleShowOnlineUsers}
         />
 
@@ -398,11 +420,11 @@ const Page = () => {
             messages={messages}
             sendMessage={sendMessage}
             onLeaveRoom={handleLeaveRoom}
+            onlineUserIds={onlineUserIds}
           />
         </Card>
       </div>
 
-      {/* Dialog for showing online users in a room */}
       <Dialog open={showOnlineUsersDialog} onOpenChange={setShowOnlineUsersDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -417,6 +439,7 @@ const Page = () => {
                 isLoading={false}
                 error={null}
                 onUserSelect={() => {}}
+                onlineUserIds={onlineUserIds}
               />
             ) : (
               <div className="text-center p-4 text-muted-foreground">

@@ -45,6 +45,7 @@ type ChatSidebarProps = {
     members: string[];
   }) => Promise<boolean>;
   onlineUsers?: Record<string, User[]>;
+  onlineUserIds?: string[];
   onShowOnlineUsers?: (roomId: string) => void;
 };
 
@@ -66,6 +67,7 @@ export const ChatSidebar = ({
   onTabChange,
   onCreateRoom,
   onlineUsers,
+  onlineUserIds = [],
   onShowOnlineUsers,
 }: ChatSidebarProps) => {
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
@@ -149,6 +151,7 @@ export const ChatSidebar = ({
             isLoading={isLoading}
             error={error}
             onUserSelect={onUserSelect}
+            onlineUserIds={onlineUserIds}
           />
         </CardContent>
       </Card>
@@ -267,7 +270,9 @@ export const ChatSidebar = ({
                               />
                               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                             </Avatar>
-                            <span className="absolute bottom-0 right-2 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card"></span>
+                            {onlineUserIds.includes(user.id) && (
+                              <span className="absolute bottom-0 right-2 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card"></span>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate">{user.name}</div>
@@ -280,7 +285,7 @@ export const ChatSidebar = ({
                   )}
                 </div>
               </ScrollArea>
-            </TabsContent>{" "}
+            </TabsContent>
             <TabsContent value="rooms" className="mt-0">
               <RoomsList
                 rooms={rooms}
