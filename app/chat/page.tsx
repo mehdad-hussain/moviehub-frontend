@@ -1,13 +1,16 @@
 "use client";
 
+import { UsersList } from "@/components/chat/users-list";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/hooks/use-chat";
 import { chatApi, chatRoomApi, usersApi } from "@/lib/api";
 import { ChatRoom, User } from "@/lib/schema";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ChatArea } from "../../components/chat/chat-area";
 import { ChatSidebar } from "../../components/chat/chat-sidebar";
@@ -25,10 +28,12 @@ const Page = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState<Record<string, User[]>>({});
+  const [selectedRoomForUsers, setSelectedRoomForUsers] = useState<string | null>(null);
+  const [showOnlineUsersDialog, setShowOnlineUsersDialog] = useState(false);
 
   const { accessToken, user: currentUser } = useAuthStore((state) => state);
   const { messages, setMessages, addMessage } = useMessages();
-
   // Add a state to track rooms created by the current user
   const [createdRoomIds, setCreatedRoomIds] = useState<Set<string>>(new Set());
 
@@ -62,8 +67,7 @@ const Page = () => {
 
     checkAuth();
   }, [accessToken, router]);
-
-  const { sendMessage, joinRoom, leaveRoom, isReconnecting } = useChat({
+  const { sendMessage, joinRoom, leaveRoom, getOnlineUsers } = useChat({
     onNewMessage: (message) => {
       if (selectedUser && message.sender._id === selectedUser.id) {
         addMessage({ ...message, read: message.read || false });
@@ -84,6 +88,8 @@ const Page = () => {
     },
     onRoomJoined: (data) => {
       console.log(`Joined room: ${data.name}`);
+      // When joining a room, request the online users for this room
+      getOnlineUsers();
     },
     onRoomLeft: (data) => {
       console.log(`Left room: ${data.name}`);
@@ -101,11 +107,30 @@ const Page = () => {
 
       fetchRooms();
     },
-    // Add reconnection handlers
+    // Online user events
+    onOnlineUsersList: (data) => {
+      const roomUsersMap: Record<string, User[]> = {};
+
+      // Process the users and organize them by room
+      if (data.userIds && data.userIds.length > 0) {
+        // Find the actual user objects from allUsers
+        const onlineUserObjects = allUsers.filter((user) => data.userIds.includes(user.id));
+
+        // For simplicity, we'll just add all online users to the current selected room
+        if (selectedRoom) {
+          roomUsersMap[selectedRoom._id] = onlineUserObjects;
+        }
+      }
+
+      setOnlineUsers(roomUsersMap);
+    },
+    // Reconnection handlers
     onReconnect: () => {
       toast.success("Reconnected", {
         description: "Your connection has been restored.",
       });
+      // After reconnection, refresh the online users list
+      getOnlineUsers();
     },
     onReconnectionSuccessful: (data) => {
       toast.success("Reconnection successful", {
@@ -123,6 +148,8 @@ const Page = () => {
     const fetchInitialData = async () => {
       try {
         await Promise.all([fetchChatUsers(), fetchAllUsers(), fetchRooms()]);
+        // After fetching initial data, request online users
+        getOnlineUsers();
       } catch (err) {
         console.error("Error fetching initial data:", err);
       } finally {
@@ -131,7 +158,7 @@ const Page = () => {
     };
 
     fetchInitialData();
-  }, [accessToken]);
+  }, [accessToken, getOnlineUsers]);
 
   useEffect(() => {
     if (accessToken) {
@@ -195,32 +222,38 @@ const Page = () => {
     }
   };
 
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
-      console.log("Fetching rooms...");
       const userRooms = await chatRoomApi.getUserRooms();
-      console.log("Fetched rooms:", userRooms);
       setRooms(userRooms);
+
+      // After fetching rooms, also request online users
+      if (getOnlineUsers) {
+        getOnlineUsers();
+      }
     } catch (err) {
       console.error("Error fetching rooms:", err);
     }
-  };
+  }, [getOnlineUsers]);
 
-  const loadChatHistory = async (userId: string) => {
-    if (!userId) {
-      console.error("Cannot load chat history: Invalid user ID");
-      setMessages([]);
-      return;
-    }
+  const loadChatHistory = useCallback(
+    async (userId: string) => {
+      if (!userId) {
+        console.error("Cannot load chat history: Invalid user ID");
+        setMessages([]);
+        return;
+      }
 
-    try {
-      const history = await chatApi.getChatHistory(userId);
-      setMessages(history);
-    } catch (err) {
-      console.error("Error loading chat history:", err);
-      setMessages([]);
-    }
-  };
+      try {
+        const history = await chatApi.getChatHistory(userId);
+        setMessages(history);
+      } catch (err) {
+        console.error("Error loading chat history:", err);
+        setMessages([]);
+      }
+    },
+    [setMessages],
+  );
 
   const loadRoomChatHistory = async (roomId: string) => {
     try {
@@ -235,12 +268,13 @@ const Page = () => {
     setSelectedUser(user);
     setSelectedRoom(null);
   };
-
   const handleRoomSelect = (room: ChatRoom) => {
     setSelectedRoom(room);
     setSelectedUser(null);
     joinRoom(room._id);
     loadRoomChatHistory(room._id);
+    // When a room is selected, fetch online users
+    getOnlineUsers();
   };
 
   const handleLeaveRoom = async (roomId: string) => {
@@ -257,7 +291,6 @@ const Page = () => {
       console.error("Error leaving room:", err);
     }
   };
-
   const handleSetTab = (value: string) => {
     if (value === "contacts") {
       fetchChatUsers();
@@ -266,6 +299,11 @@ const Page = () => {
       fetchAllUsers();
       setUsers(allUsers);
     }
+  };
+
+  const handleShowOnlineUsers = (roomId: string) => {
+    setSelectedRoomForUsers(roomId);
+    setShowOnlineUsersDialog(true);
   };
 
   const handleCreateRoom = async (roomData: {
@@ -328,7 +366,6 @@ const Page = () => {
       </div>
     );
   }
-
   return (
     <div className="container mx-auto p-4 h-[90vh] max-w-7xl">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full">
@@ -349,6 +386,8 @@ const Page = () => {
           onLeaveRoom={handleLeaveRoom}
           onTabChange={handleSetTab}
           onCreateRoom={handleCreateRoom}
+          onlineUsers={onlineUsers}
+          onShowOnlineUsers={handleShowOnlineUsers}
         />
 
         <Card className="md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden shadow-md border-muted/60">
@@ -362,6 +401,31 @@ const Page = () => {
           />
         </Card>
       </div>
+
+      {/* Dialog for showing online users in a room */}
+      <Dialog open={showOnlineUsersDialog} onOpenChange={setShowOnlineUsersDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Online Users</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[300px]">
+            {selectedRoomForUsers && onlineUsers[selectedRoomForUsers] ? (
+              <UsersList
+                users={onlineUsers[selectedRoomForUsers]}
+                currentUser={currentUser}
+                selectedUser={null}
+                isLoading={false}
+                error={null}
+                onUserSelect={() => {}}
+              />
+            ) : (
+              <div className="text-center p-4 text-muted-foreground">
+                No users are currently online in this room
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

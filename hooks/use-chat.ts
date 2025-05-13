@@ -1,25 +1,33 @@
+import { User } from "@/lib/schema";
 import { useAuthStore } from "@/lib/store/auth-store";
 import {
   ChatMessage,
+  fetchOnlineUsers,
   getSocket,
   joinRoom as joinChatRoom,
   leaveRoom as leaveChatRoom,
   offMessageSent,
   offNewMessage,
   offNewRoomMessage,
+  offOnlineUsersList,
   offReconnect,
   offReconnectionSuccessful,
   offRoomAdded,
   offRoomJoined,
   offRoomLeft,
+  offUserOffline,
+  offUserOnline,
   onMessageSent,
   onNewMessage,
   onNewRoomMessage,
+  onOnlineUsersList,
   onReconnect,
   onReconnectionSuccessful,
   onRoomAdded,
   onRoomJoined,
   onRoomLeft,
+  onUserOffline,
+  onUserOnline,
   RoomInfo,
   sendPrivateMessage,
   sendRoomMessage,
@@ -34,6 +42,9 @@ type UseChatProps = {
   onRoomJoined?: (data: { roomId: string; name: string }) => void;
   onRoomLeft?: (data: { roomId: string; name: string }) => void;
   onRoomAdded?: (data: { room: RoomInfo; message: string }) => void;
+  onUserOnline?: (data: { userId: string; user: User }) => void;
+  onUserOffline?: (data: { userId: string }) => void;
+  onOnlineUsersList?: (data: { userIds: string[] }) => void;
   onReconnect?: () => void;
   onReconnectionSuccessful?: (data: { message: string }) => void;
 };
@@ -45,6 +56,9 @@ export function useChat({
   onRoomJoined: roomJoinedCallback,
   onRoomLeft: roomLeftCallback,
   onRoomAdded: roomAddedCallback,
+  onUserOnline: userOnlineCallback,
+  onUserOffline: userOfflineCallback,
+  onOnlineUsersList: onlineUsersListCallback,
   onReconnect: reconnectCallback,
   onReconnectionSuccessful: reconnectionSuccessfulCallback,
 }: UseChatProps = {}) {
@@ -81,9 +95,21 @@ export function useChat({
       if (roomLeftCallback) {
         onRoomLeft(roomLeftCallback);
       }
-
       if (roomAddedCallback) {
         onRoomAdded(roomAddedCallback);
+      }
+
+      // Setup online user event handlers
+      if (userOnlineCallback) {
+        onUserOnline(userOnlineCallback);
+      }
+
+      if (userOfflineCallback) {
+        onUserOffline(userOfflineCallback);
+      }
+
+      if (onlineUsersListCallback) {
+        onOnlineUsersList(onlineUsersListCallback);
       }
 
       // Setup reconnection event handlers
@@ -152,15 +178,26 @@ export function useChat({
 
       if (roomAddedCallback) {
         offRoomAdded(roomAddedCallback);
-      }
-
-      // Clean up reconnection handlers
+      } // Clean up reconnection handlers
       if (reconnectCallback) {
         offReconnect(reconnectCallback);
       }
 
       if (reconnectionSuccessfulCallback) {
         offReconnectionSuccessful(reconnectionSuccessfulCallback);
+      }
+
+      // Clean up online user handlers
+      if (userOnlineCallback) {
+        offUserOnline(userOnlineCallback);
+      }
+
+      if (userOfflineCallback) {
+        offUserOffline(userOfflineCallback);
+      }
+
+      if (onlineUsersListCallback) {
+        offOnlineUsersList(onlineUsersListCallback);
       }
 
       if (socketRef.current) {
@@ -175,6 +212,9 @@ export function useChat({
     roomJoinedCallback,
     roomLeftCallback,
     roomAddedCallback,
+    userOnlineCallback,
+    userOfflineCallback,
+    onlineUsersListCallback,
     reconnectCallback,
     reconnectionSuccessfulCallback,
     accessToken,
@@ -209,7 +249,6 @@ export function useChat({
     },
     [socketRef],
   );
-
   const leaveRoom = useCallback(
     (roomId: string) => {
       if (!socketRef.current) {
@@ -223,6 +262,16 @@ export function useChat({
     [socketRef],
   );
 
+  const getOnlineUsers = useCallback(() => {
+    if (!socketRef.current) {
+      console.error("Chat socket not initialized");
+      return false;
+    }
+
+    fetchOnlineUsers();
+    return true;
+  }, [socketRef]);
+
   return {
     socket: socketRef.current,
     isConnected: !!socketRef.current?.connected,
@@ -230,5 +279,6 @@ export function useChat({
     sendMessage,
     joinRoom,
     leaveRoom,
+    getOnlineUsers,
   };
 }

@@ -1,8 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChatRoom } from "@/lib/schema";
-import { X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChatRoom, User } from "@/lib/schema";
+import { Users, X } from "lucide-react";
 import { getInitials } from "./chat-sidebar";
 
 type RoomsListProps = {
@@ -10,9 +11,18 @@ type RoomsListProps = {
   selectedRoom: ChatRoom | null;
   onRoomSelect: (room: ChatRoom) => void;
   onLeaveRoom: (roomId: string) => void;
+  onlineUsers?: Record<string, User[]>; // Map of roomId to list of online users
+  onShowOnlineUsers?: (roomId: string) => void;
 };
 
-export const RoomsList = ({ rooms, selectedRoom, onRoomSelect, onLeaveRoom }: RoomsListProps) => {
+export const RoomsList = ({
+  rooms,
+  selectedRoom,
+  onRoomSelect,
+  onLeaveRoom,
+  onlineUsers = {},
+  onShowOnlineUsers,
+}: RoomsListProps) => {
   return (
     <ScrollArea className="h-[22vh]">
       <div className="space-y-0.5 p-2">
@@ -41,18 +51,44 @@ export const RoomsList = ({ rooms, selectedRoom, onRoomSelect, onLeaveRoom }: Ro
                   {room.description || "No description"}
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-50 hover:opacity-100 hover:bg-destructive/10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLeaveRoom(room._id);
-                }}
-                title="Leave room"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex items-center gap-1.5">
+                {onlineUsers[room._id] && (
+                  <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 px-2 flex items-center text-sm gap-1 bg-green-500/10 text-green-600 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onShowOnlineUsers?.(room._id);
+                          }}
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          <span>{onlineUsers[room._id]?.length || 0}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Online users</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-50 hover:opacity-100 hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLeaveRoom(room._id);
+                  }}
+                  title="Leave room"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
           ))
         )}

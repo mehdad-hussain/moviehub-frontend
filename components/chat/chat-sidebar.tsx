@@ -44,6 +44,8 @@ type ChatSidebarProps = {
     description: string;
     members: string[];
   }) => Promise<boolean>;
+  onlineUsers?: Record<string, User[]>;
+  onShowOnlineUsers?: (roomId: string) => void;
 };
 
 export const ChatSidebar = ({
@@ -63,6 +65,8 @@ export const ChatSidebar = ({
   onLeaveRoom,
   onTabChange,
   onCreateRoom,
+  onlineUsers,
+  onShowOnlineUsers,
 }: ChatSidebarProps) => {
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
@@ -236,7 +240,6 @@ export const ChatSidebar = ({
                 <span>Rooms</span>
               </TabsTrigger>
             </TabsList>
-
             <TabsContent value="directMessages" className="mt-0">
               <ScrollArea className="h-[22vh]">
                 <div className="space-y-0.5 p-2">
@@ -277,14 +280,15 @@ export const ChatSidebar = ({
                   )}
                 </div>
               </ScrollArea>
-            </TabsContent>
-
+            </TabsContent>{" "}
             <TabsContent value="rooms" className="mt-0">
               <RoomsList
                 rooms={rooms}
                 selectedRoom={selectedRoom}
                 onRoomSelect={onRoomSelect}
                 onLeaveRoom={onLeaveRoom}
+                onlineUsers={onlineUsers}
+                onShowOnlineUsers={onShowOnlineUsers}
               />
             </TabsContent>
           </Tabs>

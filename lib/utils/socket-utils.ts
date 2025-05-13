@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { environment } from "@/lib/env";
-import { Movie } from "@/lib/schema";
+import { Movie, User } from "@/lib/schema";
 import { io, Socket } from "socket.io-client";
 
 export type MovieAddedEvent = Movie;
@@ -55,6 +55,11 @@ export const CHAT_EVENTS = {
   USER_JOINED_ROOM: "user-joined-room",
   USER_LEFT_ROOM: "user-left-room",
   ROOM_MEMBER_LEFT: "room-member-left",
+  // User status events
+  USER_ONLINE: "user-online",
+  USER_OFFLINE: "user-offline",
+  GET_ONLINE_USERS: "get-online-users",
+  ONLINE_USERS_LIST: "online-users-list",
   // Reconnection events
   RECONNECT: "reconnect",
   RECONNECTION_SUCCESSFUL: "reconnection-successful",
@@ -172,6 +177,53 @@ export const disconnectSocket = (): void => {
   if (chatSocket) {
     chatSocket.disconnect();
     chatSocket = null;
+  }
+};
+
+// Online users helper functions
+export const fetchOnlineUsers = (): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.emit(CHAT_EVENTS.GET_ONLINE_USERS);
+  }
+};
+
+export const onUserOnline = (callback: (data: { userId: string; user: User }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.USER_ONLINE, callback);
+  }
+};
+
+export const offUserOnline = (callback: (data: { userId: string; user: User }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.USER_ONLINE, callback);
+  }
+};
+
+export const onUserOffline = (callback: (data: { userId: string }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.USER_OFFLINE, callback);
+  }
+};
+
+export const offUserOffline = (callback: (data: { userId: string }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.USER_OFFLINE, callback);
+  }
+};
+
+export const onOnlineUsersList = (callback: (data: { userIds: string[] }) => void): void => {
+  const { chat } = getSocket();
+  if (chat) {
+    chat.on(CHAT_EVENTS.ONLINE_USERS_LIST, callback);
+  }
+};
+
+export const offOnlineUsersList = (callback: (data: { userIds: string[] }) => void): void => {
+  if (chatSocket) {
+    chatSocket.off(CHAT_EVENTS.ONLINE_USERS_LIST, callback);
   }
 };
 
